@@ -1,0 +1,124 @@
+references:
+https://github.com/Cisco-Talos/clamav/blob/main/libclamav/inflate64.c
+
+Deflate64 algorithm description:
+ - an extension of deflate
+
+state machine:
+HEAD,       /* i: waiting for magic header */
+goto TYPEDO if zlib, proceed for gzip
+get 16 bits
+[16 bit int big endian [1 bit flag (whether or not DICTID is next)][4 bit length][4 bit flags]]
+Whole 16 bit quantity must be a multiple of 31 or goto ACAB_BAD (some kind of error checking code being used?)
+if Z_DEFLATED (flag 0b1000) is not set goto ACAB_BAD
+length has 8 added to it for some reason? Is this just an implementation detail?
+if (flag 0b1000000000) is set goto DICTID otherwise goto TYPE
+
+FLAGS,      /* i: waiting for method and flags (gzip) */
+
+
+TIME,       /* i: waiting for modification time (gzip) */
+
+
+OS,         /* i: waiting for extra flags and operating system (gzip) */
+
+
+EXLEN,      /* i: waiting for extra length (gzip) */
+
+
+EXTRA,      /* i: waiting for extra bytes (gzip) */
+
+
+NAME,       /* i: waiting for end of file name (gzip) */
+
+
+COMMENT,    /* i: waiting for end of comment (gzip) */
+
+
+HCRC,       /* i: waiting for header crc (gzip) */
+
+
+DICTID,     /* i: waiting for dictionary check value */
+get 32 bits
+[32 bit big endian adler32 checksum]
+
+DICT,       /* waiting for inflateSetDictionary() call */
+Do some weird register restore
+Then return error Z_NEED_DICT???
+
+TYPE,       /* i: waiting for type bits, including last-flag bit */
+//some kind of error condition to exit that I don't yet understand
+goto TYPEDO
+
+TYPEDO,     /* i: same, but skip check to exit inflate on new block */
+if we're the last block align to the byte boundary then goto CHECK
+get 3 bits
+[2 bit (block type?)][1 bit flag is last bit]
+If the 2 bit block type is:
+(0) stored block: goto STORED
+(1) fixed codes block: goto LEN
+(2) dynamic codes block: goto TABLE
+(3) INVALID: goto ACAB_BAD
+
+STORED,     /* i: waiting for stored size (length and complement) */
+align to byte boundary
+get 32 bits
+[16 bits complement][16 bits unsigned length]
+the length must be the same as the notted complement, if not then data is bad so go to ACAB_BAD
+the length is the length of data that we need to copy
+goto COPY
+
+COPY,       /* i/o: waiting for input or output to copy stored block */
+repeat until the length to copy is zero
+if the length to copy is zero
+	goto TYPE
+if the length to copy is non-zero:
+	copy a chunk of the length to copy
+	verify the write, if we couldn't copy over all the data stop processing
+	repeat
+
+TABLE,      /* i: waiting for dynamic block table lengths */
+
+
+LENLENS,    /* i: waiting for code length code lengths */
+
+
+CODELENS,   /* i: waiting for length/lit and distance code lengths */
+
+
+LEN,        /* i: waiting for length/lit code */
+read the currently specified number of bits, then look them up in the lencode lookup table
+//should probably look into how the lencode table is used and constructed?
+
+LENEXT,     /* i: waiting for length extra bits */
+
+
+DIST,       /* i: waiting for distance code */
+
+
+DISTEXT,    /* i: waiting for distance extra bits */
+
+
+MATCH,      /* o: waiting for output space to copy string */
+
+
+LIT,        /* o: waiting for output space to write literal */
+
+
+CHECK,      /* i: waiting for 32-bit check value */
+
+
+LENGTH,     /* i: waiting for 32-bit length (gzip) */
+
+
+DONE,       /* finished check, done -- remain here until reset */
+
+
+ACAB_BAD,   /* got a data error -- remain here until reset */
+
+
+MEM,        /* got an inflate() memory error -- remain here until reset */
+
+
+SYNC        /* looking for synchronization bytes to restart inflate() */
+

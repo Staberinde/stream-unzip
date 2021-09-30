@@ -7,7 +7,6 @@ from Crypto.Hash import HMAC, SHA1
 from Crypto.Util import Counter
 from Crypto.Protocol.KDF import PBKDF2
 
-
 def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     local_file_header_signature = b'\x50\x4b\x03\x04'
     local_file_header_struct = Struct('<H2sHHHIIIHH')
@@ -15,6 +14,17 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
     zip64_size_signature = b'\x01\x00'
     aes_extra_signature = b'\x01\x99'
     central_directory_signature = b'\x50\x4b\x01\x02'
+
+    def is_compression_type_supported(compression):
+        return compression not in (0, 8, 9)
+
+    def get_decompressor(compression, uncompressed_size):
+        if compression == 0:
+            return get_dummy_decompressor(uncompressed_size)
+        elif compression == 8:
+            return get_deflate_decompressor()
+        elif compression == 9:
+            return get_deflate64_decompressor()
 
     def next_or_truncated_error(it):
         try:
@@ -113,6 +123,10 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             return len(dobj.unused_data)
 
         return _decompress, _is_done, _num_unused
+
+    def get_deflate64_decompressor():
+        #stub atm
+        return None, None, None
 
     def yield_file(yield_all, get_num, return_unused):
 
@@ -274,7 +288,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             Struct('<H').unpack(aes_extra[5:7])[0] if is_aes_encrypted else \
             compression_raw
 
-        if compression not in (0, 8):
+        if is_compression_type_supported(compression):
             raise UnsupportedCompressionTypeError(compression)
 
         is_zip64 = compressed_size_raw == zip64_compressed_size and uncompressed_size_raw == zip64_compressed_size
@@ -286,9 +300,7 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
             Struct('<Q').unpack(zip64_extra[:8])[0] if is_zip64 else \
             uncompressed_size_raw
 
-        decompressor = \
-            get_dummy_decompressor(uncompressed_size) if compression == 0 else \
-            get_deflate_decompressor()
+        decompressor = get_decompressor(compression, uncompressed_size)
 
         decompressed_bytes = \
             weak_decrypt_decompress(yield_all(), *decompressor) if is_weak_encrypted else \
@@ -309,13 +321,17 @@ def stream_unzip(zipfile_chunks, password=None, chunk_size=65536):
 
     while True:
         signature = get_num(len(local_file_header_signature))
+
         if signature == local_file_header_signature:
             yield yield_file(yield_all, get_num, return_unused)
         elif signature == central_directory_signature:
             for _ in yield_all():
                 pass
             break
+        elif signature == b'\xe5^yw':
+
         else:
+            import pdb; pdb.set_trace()
             raise UnexpectedSignatureError(signature)
 
 class UnzipError(ValueError):

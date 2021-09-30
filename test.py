@@ -216,7 +216,7 @@ class TestStreamUnzip(unittest.TestCase):
         for name, size, chunks in stream_unzip(yield_input()):
             for chunk in chunks:
                 pass
-    
+
         self.assertFalse(raised_generator_exit)
 
         for name, size, chunks in stream_unzip(yield_input()):
@@ -441,6 +441,15 @@ class TestStreamUnzip(unittest.TestCase):
                 (b'content.txt', 384, b'Some content to be compressed and AES-encrypted\n' * 8),
             ])
 
+    def test_apple_inflate64(self):
+        def yield_input():
+            with open('fixtures/apple_inflate64.zip', 'rb') as f:
+                yield f.read()
+
+        for name, size, chunks in stream_unzip(yield_input()):
+            pass
+            #print(chunks)
+
     def test_7za_password_protected_aes_bad_hmac(self):
         def yield_input():
             with open('fixtures/7za_17_4_aes.zip', 'rb') as f:
@@ -489,7 +498,7 @@ class TestStreamUnzip(unittest.TestCase):
         with self.assertRaises(IncorrectAESPasswordError):
             for name, size, chunks in stream_unzip(yield_input(), password=b'not-password'):
                 next(chunks)
-
+"""
     def test_7za_deflate64_not_supported(self):
         def yield_input():
             with open('fixtures/7za_17_4_deflate64.zip', 'rb') as f:
@@ -497,3 +506,4 @@ class TestStreamUnzip(unittest.TestCase):
 
         with self.assertRaises(UnsupportedCompressionTypeError):
             next(stream_unzip(yield_input()))
+"""
