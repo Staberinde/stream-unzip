@@ -12,20 +12,17 @@ def inflate64Init2(strm, windowBits):
     if (strm == Z_NULL) return Z_STREAM_ERROR
     state = (struct inflate_state FAR *)cli_calloc(1, sizeof(struct inflate_state))
     if (state == Z_NULL) return Z_MEM_ERROR
-    Tracev((stderr, "inflate: allocated\n"))
+    print("inflate: allocated\n")
     strm.state = (struct internal_state FAR *)state
-    if (windowBits < 0) {
+    if (windowBits < 0):
         state.wrap = 0
         windowBits = -windowBits
-    }
-    else {
+    else:
         state.wrap = (windowBits >> 4) + 1
-    }
-    if (windowBits < 8 || windowBits > MAX_WBITS64) {
+    if (windowBits < 8 || windowBits > MAX_WBITS64):
         free(state)
         strm.state = Z_NULL
         return Z_STREAM_ERROR
-    }
     state.wbits = (unsigned)windowBits
     state.window = Z_NULL
     strm.total_in = strm.total_out = state.total = 0
@@ -40,9 +37,8 @@ def inflate64Init2(strm, windowBits):
     state.hold = 0
     state.bits = 0
     state.lencode = state.distcode = state.next = state.codes
-    Tracev((stderr, "inflate: reset\n"))
+    print("inflate: reset\n")
     return Z_OK
-}
 
 """
    Return state with length and distance decoding tables and index sizes set to
@@ -54,14 +50,14 @@ def inflate64Init2(strm, windowBits):
    used for threaded applications, since the rewriting of the tables and virgin
    may not be thread-safe.
  """
-def fixedtables(state)
+def fixedtables(state):
 #ifdef BUILDFIXED
     static int virgin = 1
     static code *lenfix, *distfix
     static code fixed[544]
 
     """ build fixed huffman tables if first call (may not be thread safe) """
-    if (virgin) {
+    if (virgin):
         unsigned sym, bits
         static code *next
 
@@ -85,7 +81,6 @@ def fixedtables(state)
 
         """ do this just once """
         virgin = 0
-    }
 #else """ !BUILDFIXED """
 #   include "inffixed64.h"
 #endif """ BUILDFIXED """
@@ -116,43 +111,36 @@ def updatewindow(strm, out):
     state = (struct inflate_state FAR *)strm.state
 
     """ if it hasn't been done already, allocate space for the window """
-    if (state.window == Z_NULL) {
+    if (state.window == Z_NULL):
         state.window = (unsigned char FAR *)cli_calloc(1U << state.wbits, sizeof(unsigned char))
         if (state.window == Z_NULL) return 1
-    }
 
     """ if window not in use yet, initialize """
-    if (state.wsize == 0) {
+    if (state.wsize == 0):
         state.wsize = 1U << state.wbits
         state.write = 0
         state.whave = 0
-    }
 
     """ copy state.wsize or less output bytes into the circular window """
     copy = out - strm.avail_out
-    if (copy >= state.wsize) {
+    if (copy >= state.wsize):
         memcpy(state.window, strm.next_out - state.wsize, state.wsize)
         state.write = 0
         state.whave = state.wsize
-    }
-    else {
+    else:
         dist = state.wsize - state.write
         if (dist > copy) dist = copy
         memcpy(state.window + state.write, strm.next_out - copy, dist)
         copy -= dist
-        if (copy) {
+        if (copy):
             memcpy(state.window, strm.next_out - copy, copy)
             state.write = copy
             state.whave = state.wsize
-        }
-        else {
+        else:
             state.write += dist
             if (state.write == state.wsize) state.write = 0
             if (state.whave < state.wsize) state.whave += dist
-        }
-    }
     return 0
-}
 
 """ Macros for inflate(): """
 
@@ -338,91 +326,81 @@ def inflate64(strm, flush):
     in = have
     out = left
     ret = Z_OK
-    for ()
-        switch (state.mode) {
-        case HEAD:
-            if (state.wrap == 0) {
+    while True:
+        if state.mode == HEAD:
+            if (state.wrap == 0):
                 state.mode = TYPEDO
                 break
             }
             NEEDBITS(16)
             if (
-                ((BITS(8) << 8) + (hold >> 8)) % 31) {
+                ((BITS(8) << 8) + (hold >> 8)) % 31):
                 state.mode = ACAB_BAD
                 break
-            }
-            if (BITS(4) != Z_DEFLATED) {
+            if (BITS(4) != Z_DEFLATED):
                 state.mode = ACAB_BAD
                 break
-            }
             DROPBITS(4)
             len = BITS(4) + 8
-            if (len > state.wbits) {
+            if (len > state.wbits):
                 state.mode = ACAB_BAD
                 break
-            }
             state.dmax = 1U << len
-            Tracev((stderr, "inflate:   zlib header ok\n"))
+            print("inflate:   zlib header ok\n")
             strm.adler = state.check = adler32(0L, Z_NULL, 0)
             state.mode = hold & 0x200 ? DICTID : TYPE
             INITBITS()
             break
-        case DICTID:
+        elif state.mode == DICTID:
             NEEDBITS(32)
             strm.adler = state.check = REVERSE(hold)
             INITBITS()
             state.mode = DICT
-        case DICT:
+        elif state.mode == DICT:
             RESTORE()
             return Z_NEED_DICT
-        case TYPE:
+        elif state.mode == TYPE:
             if (flush == Z_BLOCK) goto inf_leave
-        case TYPEDO:
-            if (state.last) {
+        elif state.mode == TYPEDO:
+            if (state.last):
                 BYTEBITS()
                 state.mode = CHECK
                 break
-            }
             NEEDBITS(3)
             state.last = BITS(1)
             DROPBITS(1)
-            switch (BITS(2)) {
-            case 0:                             """ stored block """
-                Tracev((stderr, "inflate:     stored block%s\n",
-                        state.last ? " (last)" : ""))
+            if BITS(2) == 0:                             """ stored block """
+                print(f"inflate:     stored block%s\n ${state.last}")
                 state.mode = STORED
                 break
-            case 1:                             """ fixed block """
+            elif BITS(2) == 1:                             """ fixed block """
                 fixedtables(state)
-                Tracev((stderr, "inflate:     fixed codes block%s\n",
-                        state.last ? " (last)" : ""))
-                state.mode = LEN              """ decode codes """
+                print(f"inflate:     fixed codes block%s\n state.last ${state.last}")
+                """ decode codes """
+                state.mode = LEN
                 break
-            case 2:                             """ dynamic block """
-                Tracev((stderr, "inflate:     dynamic codes block%s\n",
-                        state.last ? " (last)" : ""))
+            elif BITS(2) == 2:                             """ dynamic block """
+                print(f"inflate:     dynamic codes block%s\nstate.last ${state.last}")
                 state.mode = TABLE
                 break
-            case 3:
+            elif BITS(2)) == 3:
                 state.mode = ACAB_BAD
-            }
             DROPBITS(2)
             break
-        case STORED:
+        elif state.mode == STORED:
             BYTEBITS()                         """ go to byte boundary """
             NEEDBITS(32)
-            if ((hold & 0xffff) != ((hold >> 16) ^ 0xffff)) {
+            if ((hold & 0xffff) != ((hold >> 16) ^ 0xffff)):
                 state.mode = ACAB_BAD
                 break
-            }
             state.length = (unsigned)hold & 0xffff
             Tracev((stderr, "inflate:       stored length %u\n",
                     state.length))
             INITBITS()
             state.mode = COPY
-        case COPY:
+        elif state.mode == COPY:
             copy = state.length
-            if (copy) {
+            if (copy):
                 if (copy > have) copy = have
                 if (copy > left) copy = left
                 if (copy == 0) goto inf_leave
@@ -433,11 +411,10 @@ def inflate64(strm, flush):
                 put += copy
                 state.length -= copy
                 break
-            }
-            Tracev((stderr, "inflate:       stored end\n"))
+            print("inflate:       stored end\n")
             state.mode = TYPE
             break
-        case TABLE:
+        elif state.mode == TABLE:
             NEEDBITS(14)
             state.nlen = BITS(5) + 257
             DROPBITS(5)
@@ -446,20 +423,18 @@ def inflate64(strm, flush):
             state.ncode = BITS(4) + 4
             DROPBITS(4)
 #ifndef PKZIP_BUG_WORKAROUND
-            if (state.nlen > 286 || state.ndist > 30) {
+            if (state.nlen > 286 || state.ndist > 30):
                 state.mode = ACAB_BAD
                 break
-            }
 #endif
-            Tracev((stderr, "inflate:       table sizes ok\n"))
+            print("inflate:       table sizes ok\n")
             state.have = 0
             state.mode = LENLENS
-        case LENLENS:
-            while (state.have < state.ncode) {
+        elif state.mode == LENLENS:
+            while (state.have < state.ncode):
                 NEEDBITS(3)
                 state.lens[order[state.have++]] = (unsigned short)BITS(3)
                 DROPBITS(3)
-            }
             while (state.have < 19)
                 state.lens[order[state.have++]] = 0
             state.next = state.codes
@@ -467,59 +442,50 @@ def inflate64(strm, flush):
             state.lenbits = 7
             ret = inflate_table(CODES, state.lens, 19, &(state.next),
                                 &(state.lenbits), state.work)
-            if (ret) {
+            if (ret):
                 state.mode = ACAB_BAD
                 break
-            }
-            Tracev((stderr, "inflate:       code lengths ok\n"))
+            print("inflate:       code lengths ok\n")
             state.have = 0
             state.mode = CODELENS
-        case CODELENS:
-            while (state.have < state.nlen + state.ndist) {
                 for () {
+        elif state.mode == CODELENS:
+            while (state.have < state.nlen + state.ndist):
                     this = state.lencode[BITS(state.lenbits)]
                     if ((unsigned)(this.bits) <= bits) break
                     PULLBYTE()
                 }
-                if (this.val < 16) {
+                if (this.val < 16):
                     NEEDBITS(this.bits)
                     DROPBITS(this.bits)
                     state.lens[state.have++] = this.val
-                }
-                else {
-                    if (this.val == 16) {
+                else:
+                    if (this.val == 16):
                         NEEDBITS(this.bits + 2)
                         DROPBITS(this.bits)
-                        if (state.have == 0) {
+                        if (state.have == 0):
                             state.mode = ACAB_BAD
                             break
-                        }
                         len = state.lens[state.have - 1]
                         copy = 3 + BITS(2)
                         DROPBITS(2)
-                    }
-                    else if (this.val == 17) {
+                    else if (this.val == 17):
                         NEEDBITS(this.bits + 3)
                         DROPBITS(this.bits)
                         len = 0
                         copy = 3 + BITS(3)
                         DROPBITS(3)
-                    }
-                    else {
+                    else:
                         NEEDBITS(this.bits + 7)
                         DROPBITS(this.bits)
                         len = 0
                         copy = 11 + BITS(7)
                         DROPBITS(7)
-                    }
-                    if (state.have + copy > state.nlen + state.ndist) {
+                    if (state.have + copy > state.nlen + state.ndist):
                         state.mode = ACAB_BAD
                         break
-                    }
                     while (copy--)
                         state.lens[state.have++] = (unsigned short)len
-                }
-            }
 
             """ handle error breaks in while """
             if (state.mode == ACAB_BAD) break
@@ -530,22 +496,20 @@ def inflate64(strm, flush):
             state.lenbits = 9
             ret = inflate_table(LENS, state.lens, state.nlen, &(state.next),
                                 &(state.lenbits), state.work)
-            if (ret) {
+            if (ret):
                 state.mode = ACAB_BAD
                 break
-            }
             state.distcode = (code const FAR *)(state.next)
             state.distbits = 6
             ret = inflate_table(DISTS, state.lens + state.nlen, state.ndist,
                             &(state.next), &(state.distbits), state.work)
-            if (ret) {
+            if (ret):
                 state.mode = ACAB_BAD
                 break
-            }
-            Tracev((stderr, "inflate:       codes ok\n"))
+            print("inflate:       codes ok\n")
             state.mode = LEN
-        case LEN:
-		"""            if (have >= 6 && left >= 258) {
+        elif state.mode == LEN:
+		"""            if (have >= 6 && left >= 258):
                 RESTORE()
                 inflate_fast(strm, out)
                 LOAD()
@@ -556,7 +520,7 @@ def inflate64(strm, flush):
                 if ((unsigned)(this.bits) <= bits) break
                 PULLBYTE()
             }
-            if (this.op && (this.op & 0xf0) == 0) {
+            if (this.op && (this.op & 0xf0) == 0):
                 last = this
                 for () {
                     this = state.lencode[last.val +
@@ -565,43 +529,39 @@ def inflate64(strm, flush):
                     PULLBYTE()
                 }
                 DROPBITS(last.bits)
-            }
             DROPBITS(this.bits)
             state.length = (unsigned)this.val
-            if ((int)(this.op) == 0) {
+            if ((int)(this.op) == 0):
                 Tracevv((stderr, this.val >= 0x20 && this.val < 0x7f ?
                         "inflate:         literal '%c'\n" :
                         "inflate:         literal 0x%02x\n", this.val))
                 state.mode = LIT
                 break
-            }
             Tracevv((stderr, "inflate:         op %u\n", this.op))
-            if (this.op & 32) {
+            if (this.op & 32):
                 Tracevv((stderr, "inflate:         end of block\n"))
                 state.mode = TYPE
                 break
-            }
-            if (this.op & 64) {
+            if (this.op & 64):
                 state.mode = ACAB_BAD
                 break
             }
             state.extra = (unsigned)(this.op) & 31
             state.mode = LENEXT
-        case LENEXT:
-            if (state.extra) {
+        elif state.mode == LENEXT:
+            if (state.extra):
                 NEEDBITS(state.extra)
                 state.length += BITS(state.extra)
                 DROPBITS(state.extra)
-            }
-            Tracevv((stderr, "inflate:         length %u\n", state.length))
+            print(stderr, "inflate:         length %u\n", state.length)
             state.mode = DIST
-        case DIST:
             for () {
+        elif state.mode == DIST:
                 this = state.distcode[BITS(state.distbits)]
                 if ((unsigned)(this.bits) <= bits) break
                 PULLBYTE()
             }
-            if ((this.op & 0xf0) == 0) {
+            if ((this.op & 0xf0) == 0):
                 last = this
                 for () {
                     this = state.distcode[last.val +
@@ -610,51 +570,43 @@ def inflate64(strm, flush):
                     PULLBYTE()
                 }
                 DROPBITS(last.bits)
-            }
             DROPBITS(this.bits)
-            if (this.op & 64) {
+            if (this.op & 64):
                 state.mode = ACAB_BAD
                 break
-            }
             Tracevv((stderr, "inflate:        val %u\n", state.offset))
             state.offset = (unsigned)this.val
             state.extra = (unsigned)(this.op) & 15
             state.mode = DISTEXT
-        case DISTEXT:
-            if (state.extra) {
+        elif state.mode == DISTEXT:
+            if (state.extra):
                 NEEDBITS(state.extra)
                 state.offset += BITS(state.extra)
                 DROPBITS(state.extra)
-            }
 #ifdef INFLATE_STRICT
-            if (state.offset > state.dmax) {
+            if (state.offset > state.dmax):
                 state.mode = ACAB_BAD
                 break
-            }
 #endif
-            if (state.offset > state.whave + out - left) {
+            if (state.offset > state.whave + out - left):
                 state.mode = ACAB_BAD
                 break
-            }
             Tracevv((stderr, "inflate:         distance %u\n", state.offset))
             state.mode = MATCH
-        case MATCH:
+        elif state.mode == MATCH:
             if (left == 0) goto inf_leave
             copy = out - left
-            if (state.offset > copy) {         """ copy from window """
+            if (state.offset > copy):         """ copy from window """
                 copy = state.offset - copy
-                if (copy > state.write) {
+                if (copy > state.write):
                     copy -= state.write
                     from = state.window + (state.wsize - copy)
-                }
                 else
                     from = state.window + (state.write - copy)
                 if (copy > state.length) copy = state.length
-            }
-            else {                              """ copy from output """
+            else:                              """ copy from output """
                 from = put - state.offset
                 copy = state.length
-            }
             if (copy > left) copy = left
             left -= copy
             state.length -= copy
@@ -663,14 +615,14 @@ def inflate64(strm, flush):
             } while (--copy)
             if (state.length == 0) state.mode = LEN
             break
-        case LIT:
+        elif state.mode == LIT:
             if (left == 0) goto inf_leave
             *put++ = (unsigned char)(state.length)
             left--
             state.mode = LEN
             break
-        case CHECK:
-            if (state.wrap) {
+        elif state.mode == CHECK:
+            if (state.wrap):
                 NEEDBITS(32)
                 out -= left
                 strm.total_out += out
@@ -680,26 +632,23 @@ def inflate64(strm, flush):
                         UPDATE(state.check, put - out, out)
                 out = left
                 if ((
-                     REVERSE(hold)) != state.check) {
+                     REVERSE(hold)) != state.check):
                     state.mode = ACAB_BAD
                     break
-                }
                 INITBITS()
-                Tracev((stderr, "inflate:   check matches trailer\n"))
-            }
+                print("inflate:   check matches trailer\n")
             state.mode = DONE
-        case DONE:
+        elif state.mode == DONE:
             ret = Z_STREAM_END
             goto inf_leave
-        case ACAB_BAD:
+        elif state.mode == ACAB_BAD:
             ret = Z_DATA_ERROR
             goto inf_leave
-        case MEM:
+        elif state.mode == MEM:
             return Z_MEM_ERROR
-        case SYNC:
-        default:
+        elif state.mode == SYNC:
+        else:
             return Z_STREAM_ERROR
-        }
 
     """
        Return from inflate(), updating the total counts and the check value.
