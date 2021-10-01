@@ -245,6 +245,7 @@ def updatewindow(strm, out):
 def UPDATE(check, buf, len):
     return adler32(check, buf, len)
 
+
 # TODO is this a global or do we want to refactor this to be passsed?
 #  state = None
 have = None
@@ -303,8 +304,8 @@ def PULLBYTE():
         state.total += out
         if (state.wrap && out)
             strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
-        strm.data_type = state.bits + (state.last ? 64 : 0) +
-                          (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+        strm.data_type = state.bits + (64 if state.last else 0) +
+                          (128 if state.mode == INFLATE_MODE.TYPE else 0)
         if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
             ret = Z_BUF_ERROR
         return ret
@@ -450,6 +451,7 @@ def inflate64(strm, flush):
     in_ = have
     out = left
     ret = Z_OK
+
     # TODO: I *think* these `break` statements should actually be `continue`s?
     while True:
         if state.mode == INFLATE_MODE.HEAD:
@@ -473,7 +475,7 @@ def inflate64(strm, flush):
             print("inflate:   zlib header ok\n")
             #TODO find python implementation of adler32
             strm.adler = state.check = adler32(0L, Z_NULL, 0)
-            state.mode = INFLATE_MODE.hold & 0x200 ? DICTID : TYPE
+            state.mode = DICTID if INFLATE_MODE.hold & 0x200 else TYPE
             INITBITS()
             break
         elif state.mode == INFLATE_MODE.DICTID:
@@ -504,9 +506,9 @@ def inflate64(strm, flush):
                 state.total += out
                 if (state.wrap && out)
                     strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
-                strm.data_type = state.bits + (state.last ? 64 : 0) +
-                                  (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
-                if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                strm.data_type = state.bits + (64 if state.last else 0) +
+                                  (128 if state.mode == INFLATE_MODE.TYPE else 0)
+                if (((in_ == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
                     ret = Z_BUF_ERROR
                 return ret
         elif state.mode == INFLATE_MODE.TYPEDO:
@@ -575,8 +577,8 @@ def inflate64(strm, flush):
                     state.total += out
                     if (state.wrap && out)
                         strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
-                    strm.data_type = state.bits + (state.last ? 64 : 0) +
-                                      (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+                    strm.data_type = state.bits + (64 if state.last else 0) +
+                                      (128 if state.mode == INFLATE_MODE.TYPE else 0)
                     if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
                         ret = Z_BUF_ERROR
                     return ret
@@ -785,8 +787,8 @@ def inflate64(strm, flush):
                 state.total += out
                 if (state.wrap && out)
                     strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
-                strm.data_type = state.bits + (state.last ? 64 : 0) +
-                                  (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+                strm.data_type = state.bits + (64 if state.last else 0) +
+                                  (128 if state.mode == INFLATE_MODE.TYPE else 0)
                 if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
                     ret = Z_BUF_ERROR
                 return ret
@@ -831,8 +833,8 @@ def inflate64(strm, flush):
                 state.total += out
                 if (state.wrap && out)
                     strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
-                strm.data_type = state.bits + (state.last ? 64 : 0) +
-                                  (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+                strm.data_type = state.bits + (64 if state.last else 0) +
+                                  (128 if state.mode == INFLATE_MODE.TYPE else 0)
                 if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
                     ret = Z_BUF_ERROR
                 return ret
@@ -878,8 +880,8 @@ def inflate64(strm, flush):
             state.total += out
             if (state.wrap && out)
                 strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
-            strm.data_type = state.bits + (state.last ? 64 : 0) +
-                              (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+            strm.data_type = state.bits + (64 if state.last else 0) +
+                              (128 if state.mode == INFLATE_MODE.TYPE else 0)
             if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
                 ret = Z_BUF_ERROR
             return ret
@@ -898,8 +900,8 @@ def inflate64(strm, flush):
             state.total += out
             if (state.wrap && out)
                 strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
-            strm.data_type = state.bits + (state.last ? 64 : 0) +
-                              (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+            strm.data_type = state.bits + (64 if state.last else 0) +
+                              (128 if state.mode == INFLATE_MODE.TYPE else 0)
             if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
                 ret = Z_BUF_ERROR
             return ret
