@@ -154,7 +154,7 @@ def fixedtables(state):
     virgin = 1
     lenfix = code()
     distfix = code()
-    fixed = [ code ] * 544
+    fixed = [ code() ] * 544
 
     """ build fixed huffman tables if first call (may not be thread safe) """
     if (virgin):
@@ -210,7 +210,7 @@ def updatewindow(strm, out):
 
     """ if window not in use yet, initialize """
     if (state.wsize == 0):
-        state.wsize = 1U << state.wbits
+        state.wsize = 1 << state.wbits
         state.write = 0
         state.whave = 0
 
@@ -265,7 +265,7 @@ def RESTORE():
     global strm
     strm.next_out = put
     strm.avail_out = left
-    strm.next_in = next
+    strm.next_in = next_
     strm.avail_in = have
     state.hold = hold
     state.bits = bits
@@ -295,14 +295,14 @@ def PULLBYTE():
             }
         in_ -= strm.avail_in
         out -= strm.avail_out
-        strm.total_in += in
+        strm.total_in += in_
         strm.total_out += out
         state.total += out
         if (state.wrap and out)
             strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
         strm.data_type = state.bits + (64 if state.last else 0) +
                           (128 if state.mode == INFLATE_MODE.TYPE else 0)
-        if (((in == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
+        if (((in_ == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
             ret = Z_BUF_ERROR
         return ret
     have -= 1
