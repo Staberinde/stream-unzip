@@ -87,7 +87,8 @@ def inflate64Init2(strm, windowBits):
    may not be thread-safe.
  """
 def fixedtables(state):
-#ifdef BUILDFIXED
+    global bits
+
     static int virgin = 1
     static code *lenfix, *distfix
     static code fixed[544]
@@ -117,9 +118,6 @@ def fixedtables(state):
 
         """ do this just once """
         virgin = 0
-#else """ !BUILDFIXED """
-#   include "inffixed64.h"
-#endif """ BUILDFIXED """
     state.lencode = lenfix
     state.lenbits = 9
     state.distcode = distfix
@@ -183,74 +181,74 @@ def updatewindow(strm, out):
 """ check function to use adler32() for zlib or crc32() for gzip """
 #  define UPDATE(check, buf, len) adler32(check, buf, len)
 
+strm = None
+state = None
+have = None
+hold = None
+put = None
+hold = None
+bits = None
+
 """ Load registers with state in inflate() for speed """
-#define LOAD() \
-    do { \
-        put = strm.next_out \
-        left = strm.avail_out \
-        next = strm.next_in \
-        have = strm.avail_in \
-        hold = state.hold \
-        bits = state.bits \
-    } while (0)
+def LOAD():
+    global put, left, next, have, hold, bits
+    put = strm.next_out
+    left = strm.avail_out
+    next = strm.next_in
+    have = strm.avail_in
+    hold = state.hold
+    bits = state.bits
 
 """ Restore state from registers in inflate() """
-#define RESTORE() \
-    do { \
-        strm.next_out = put \
-        strm.avail_out = left \
-        strm.next_in = next \
-        strm.avail_in = have \
-        state.hold = hold \
-        state.bits = bits \
-    } while (0)
+def RESTORE():
+    global strm
+    strm.next_out = put
+    strm.avail_out = left
+    strm.next_in = next
+    strm.avail_in = have
+    state.hold = hold
+    state.bits = bits
 
 """ Clear the input bit accumulator """
-#define INITBITS() \
-    do { \
-        hold = 0 \
-        bits = 0 \
-    } while (0)
+def INITBITS():
+    global hold, bits
+    hold = 0
+    bits = 0
 
 """ Get a byte of input into the bit accumulator, or return from inflate()
    if there is no input available. """
-#define PULLBYTE() \
-    do { \
-        if (have == 0) goto inf_leave \
-        have-- \
-        hold += (unsigned long)(*next++) << bits \
-        bits += 8 \
-    } while (0)
+def PULLBYTE():
+    global have, hold, bits
+    if (have == 0) goto inf_leave
+    have -= 1
+    hold += (unsigned long)(*next++) << bits
+    bits += 8
 
 """ Assure that there are at least n bits in the bit accumulator.  If there is
    not enough available input to do that, then return from inflate(). """
-#define NEEDBITS(n) \
-    do { \
-        while (bits < (unsigned)(n)) \
-            PULLBYTE() \
-    } while (0)
+def NEEDBITS(n):
+    while (bits < (n)):
+        PULLBYTE()
 
 """ Return the low n bits of the bit accumulator (n < 16) """
-#define BITS(n) \
-    ((unsigned)hold & ((1U << (n)) - 1))
+def BITS(n):
+    return (hold & ((1 << (n)) - 1))
 
 """ Remove n bits from the bit accumulator """
-#define DROPBITS(n) \
-    do { \
-        hold >>= (n) \
-        bits -= (unsigned)(n) \
-    } while (0)
+def DROPBITS(n):
+    global hold, bits
+    hold >>= (n)
+    bits -= (n)
 
 """ Remove zero to seven bits as needed to go to a byte boundary """
-#define BYTEBITS() \
-    do { \
-        hold >>= bits & 7 \
-        bits -= bits & 7 \
-    } while (0)
+def BYTEBITS():
+    global hold, bits
+    hold >>= bits & 7
+    bits -= bits & 7
 
 """ Reverse the bytes in a 32-bit value """
-#define REVERSE(q) \
-    ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
+def REVERSE(q):
+    return ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
      (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
 
 """
