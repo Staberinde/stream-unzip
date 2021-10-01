@@ -286,8 +286,32 @@ def INITBITS():
 """ Get a byte of input into the bit accumulator, or return from inflate()
    if there is no input available. """
 def PULLBYTE():
-    global have, hold, bits
-    if (have == 0) goto inf_leave
+    global have, hold, bits, out, in
+    if (have == 0):
+        """
+           Return from inflate(), updating the total counts and the check value.
+           If there was no progress during the inflate() call, return a buffer
+           error.  Call updatewindow() to create and/or update the window state.
+           Note: a memory error from inflate() is non-recoverable.
+        """
+        RESTORE()
+        if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+            if (updatewindow(strm, out)):
+                state.mode = INFLATE_MODE.MEM
+                return Z_MEM_ERROR
+            }
+        in -= strm.avail_in
+        out -= strm.avail_out
+        strm.total_in += in
+        strm.total_out += out
+        state.total += out
+        if (state.wrap && out)
+            strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
+        strm.data_type = state.bits + (state.last ? 64 : 0) +
+                          (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+        if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+            ret = Z_BUF_ERROR
+        return ret
     have -= 1
     hold += (unsigned long)(*next++) << bits
     bits += 8
@@ -464,7 +488,30 @@ def inflate64(strm, flush):
             RESTORE()
             return Z_NEED_DICT
         elif state.mode == INFLATE_MODE.TYPE:
-            if (flush == Z_BLOCK) goto inf_leave
+            if (flush == Z_BLOCK):
+                """
+                   Return from inflate(), updating the total counts and the check value.
+                   If there was no progress during the inflate() call, return a buffer
+                   error.  Call updatewindow() to create and/or update the window state.
+                   Note: a memory error from inflate() is non-recoverable.
+                """
+                RESTORE()
+                if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                    if (updatewindow(strm, out)):
+                        state.mode = INFLATE_MODE.MEM
+                        return Z_MEM_ERROR
+                in -= strm.avail_in
+                out -= strm.avail_out
+                strm.total_in += in
+                strm.total_out += out
+                state.total += out
+                if (state.wrap && out)
+                    strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
+                strm.data_type = state.bits + (state.last ? 64 : 0) +
+                                  (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+                if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                    ret = Z_BUF_ERROR
+                return ret
         elif state.mode == INFLATE_MODE.TYPEDO:
             if (state.last):
                 BYTEBITS()
@@ -511,7 +558,31 @@ def inflate64(strm, flush):
             if (copy):
                 if (copy > have) copy = have
                 if (copy > left) copy = left
-                if (copy == 0) goto inf_leave
+                if (copy == 0):
+                    """
+                       Return from inflate(), updating the total counts and the check value.
+                       If there was no progress during the inflate() call, return a buffer
+                       error.  Call updatewindow() to create and/or update the window state.
+                       Note: a memory error from inflate() is non-recoverable.
+                    """
+                    RESTORE()
+                    if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                        if (updatewindow(strm, out)):
+                            state.mode = INFLATE_MODE.MEM
+                            return Z_MEM_ERROR
+                        }
+                    in -= strm.avail_in
+                    out -= strm.avail_out
+                    strm.total_in += in
+                    strm.total_out += out
+                    state.total += out
+                    if (state.wrap && out)
+                        strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
+                    strm.data_type = state.bits + (state.last ? 64 : 0) +
+                                      (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+                    if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                        ret = Z_BUF_ERROR
+                    return ret
                 memcpy(put, next, copy)
                 have -= copy
                 next += copy
@@ -699,7 +770,31 @@ def inflate64(strm, flush):
             Tracevv((stderr, "inflate:         distance %u\n", state.offset))
             state.mode = INFLATE_MODE.MATCH
         elif state.mode == INFLATE_MODE.MATCH:
-            if (left == 0) goto inf_leave
+            if (left == 0):
+                """
+                   Return from inflate(), updating the total counts and the check value.
+                   If there was no progress during the inflate() call, return a buffer
+                   error.  Call updatewindow() to create and/or update the window state.
+                   Note: a memory error from inflate() is non-recoverable.
+                """
+                RESTORE()
+                if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                    if (updatewindow(strm, out)):
+                        state.mode = INFLATE_MODE.MEM
+                        return Z_MEM_ERROR
+                    }
+                in -= strm.avail_in
+                out -= strm.avail_out
+                strm.total_in += in
+                strm.total_out += out
+                state.total += out
+                if (state.wrap && out)
+                    strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
+                strm.data_type = state.bits + (state.last ? 64 : 0) +
+                                  (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+                if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                    ret = Z_BUF_ERROR
+                return ret
             copy = out - left
             if (state.offset > copy):         """ copy from window """
                 copy = state.offset - copy
@@ -721,7 +816,31 @@ def inflate64(strm, flush):
             if (state.length == 0) state.mode = INFLATE_MODE.LEN
             break
         elif state.mode == INFLATE_MODE.LIT:
-            if (left == 0) goto inf_leave
+            if (left == 0):
+                """
+                   Return from inflate(), updating the total counts and the check value.
+                   If there was no progress during the inflate() call, return a buffer
+                   error.  Call updatewindow() to create and/or update the window state.
+                   Note: a memory error from inflate() is non-recoverable.
+                """
+                RESTORE()
+                if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                    if (updatewindow(strm, out)):
+                        state.mode = INFLATE_MODE.MEM
+                        return Z_MEM_ERROR
+                    }
+                in -= strm.avail_in
+                out -= strm.avail_out
+                strm.total_in += in
+                strm.total_out += out
+                state.total += out
+                if (state.wrap && out)
+                    strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
+                strm.data_type = state.bits + (state.last ? 64 : 0) +
+                                  (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+                if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                    ret = Z_BUF_ERROR
+                return ret
             *put++ = (unsigned char)(state.length)
             left--
             state.mode = INFLATE_MODE.LEN
@@ -745,42 +864,56 @@ def inflate64(strm, flush):
             state.mode = INFLATE_MODE.DONE
         elif state.mode == INFLATE_MODE.DONE:
             ret = Z_STREAM_END
-            goto inf_leave
+            """
+               Return from inflate(), updating the total counts and the check value.
+               If there was no progress during the inflate() call, return a buffer
+               error.  Call updatewindow() to create and/or update the window state.
+               Note: a memory error from inflate() is non-recoverable.
+            """
+            RESTORE()
+            if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                if (updatewindow(strm, out)):
+                    state.mode = INFLATE_MODE.MEM
+                    return Z_MEM_ERROR
+                }
+            in -= strm.avail_in
+            out -= strm.avail_out
+            strm.total_in += in
+            strm.total_out += out
+            state.total += out
+            if (state.wrap && out)
+                strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
+            strm.data_type = state.bits + (state.last ? 64 : 0) +
+                              (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+            if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                ret = Z_BUF_ERROR
+            return ret
         elif state.mode == INFLATE_MODE.ACAB_BAD:
             ret = Z_DATA_ERROR
-            goto inf_leave
+            RESTORE()
+            if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                if (updatewindow(strm, out)):
+                    state.mode = INFLATE_MODE.MEM
+                    return Z_MEM_ERROR
+                }
+            in -= strm.avail_in
+            out -= strm.avail_out
+            strm.total_in += in
+            strm.total_out += out
+            state.total += out
+            if (state.wrap && out)
+                strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
+            strm.data_type = state.bits + (state.last ? 64 : 0) +
+                              (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
+            if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                ret = Z_BUF_ERROR
+            return ret
         elif state.mode == INFLATE_MODE.MEM:
             return Z_MEM_ERROR
         elif state.mode == INFLATE_MODE.SYNC:
         else:
             return Z_STREAM_ERROR
 
-    """
-       Return from inflate(), updating the total counts and the check value.
-       If there was no progress during the inflate() call, return a buffer
-       error.  Call updatewindow() to create and/or update the window state.
-       Note: a memory error from inflate() is non-recoverable.
-     """
-  inf_leave:
-    RESTORE()
-    if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
-        if (updatewindow(strm, out)):
-            state.mode = INFLATE_MODE.MEM
-            return Z_MEM_ERROR
-        }
-    in -= strm.avail_in
-    out -= strm.avail_out
-    strm.total_in += in
-    strm.total_out += out
-    state.total += out
-    if (state.wrap && out)
-        strm.adler = state.check =
-            UPDATE(state.check, strm.next_out - out, out)
-    strm.data_type = state.bits + (state.last ? 64 : 0) +
-                      (state.mode == INFLATE_MODE.TYPE ? 128 : 0)
-    if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
-        ret = Z_BUF_ERROR
-    return ret
 
 def inflate64End(strm):
     if (strm == Z_NULL || strm.state == Z_NULL)
