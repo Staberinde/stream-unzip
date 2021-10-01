@@ -157,14 +157,15 @@ def inflate64Init2(strm, windowBits):
 def fixedtables(state):
     global bits
 
-    static int virgin = 1
-    static code *lenfix, *distfix
-    static code fixed[544]
+    virgin = 1
+    lenfix = code()
+    distfix = code()
+    fixed = [ code ] * 544
 
     """ build fixed huffman tables if first call (may not be thread safe) """
     if (virgin):
         unsigned sym, bits
-        static code *next
+        next_ = code()
 
         """ literal/length table """
         sym = 0
@@ -172,17 +173,17 @@ def fixedtables(state):
         while (sym < 256) state.lens[sym++] = 9
         while (sym < 280) state.lens[sym++] = 7
         while (sym < 288) state.lens[sym++] = 8
-        next = fixed
-        lenfix = next
+        next_ = fixed
+        lenfix = next_
         bits = 9
-        inflate_table(LENS, state.lens, 288, &(next), &(bits), state.work)
+        inflate_table(LENS, state.lens, 288, next_, &(bits), state.work)
 
         """ distance table """
         sym = 0
         while (sym < 32) state.lens[sym++] = 5
-        distfix = next
+        distfix = next_
         bits = 5
-        inflate_table(DISTS, state.lens, 32, &(next), &(bits), state.work)
+        inflate_table(DISTS, state.lens, 32, next_, bits_, state.work)
 
         """ do this just once """
         virgin = 0
@@ -249,20 +250,20 @@ def updatewindow(strm, out):
 """ check function to use adler32() for zlib or crc32() for gzip """
 #  define UPDATE(check, buf, len) adler32(check, buf, len)
 
-strm = None
-state = None
+# TODO is this a global or do we want to refactor this to be passsed?
+#  state = None
 have = None
 hold = None
 put = None
 hold = None
 bits = None
 
-""" Load registers with state in inflate() for speed """
+""" Load registers with state in_ inflate() for speed """
 def LOAD():
-    global put, left, next, have, hold, bits
+    global put, left, next_, have, hold, bits
     put = strm.next_out
     left = strm.avail_out
-    next = strm.next_in
+    next_ = strm.next_in
     have = strm.avail_in
     hold = state.hold
     bits = state.bits
@@ -300,7 +301,7 @@ def PULLBYTE():
                 state.mode = INFLATE_MODE.MEM
                 return Z_MEM_ERROR
             }
-        in -= strm.avail_in
+        in_ -= strm.avail_in
         out -= strm.avail_out
         strm.total_in += in
         strm.total_out += out
@@ -313,7 +314,7 @@ def PULLBYTE():
             ret = Z_BUF_ERROR
         return ret
     have -= 1
-    hold += (unsigned long)(*next++) << bits
+    hold += (unsigned long)(*next_++) << bits
     bits += 8
 
 """ Assure that there are at least n bits in the bit accumulator.  If there is
@@ -426,7 +427,7 @@ def REVERSE(q):
  """
 
 def inflate64(strm, flush):
-    #  unsigned char FAR *next    """ next input """
+    #  unsigned char FAR *next_    """ next input """
     #  unsigned char FAR *put     """ next output """
     #  unsigned have, left        """ available input and output """
     #  unsigned long hold         """ bit buffer """
@@ -451,7 +452,7 @@ def inflate64(strm, flush):
     state = inflate_state()
     if (state.mode == INFLATE_MODE.TYPE) state.mode = INFLATE_MODE.TYPEDO      """ skip check """
     LOAD()
-    in = have
+    in_ = have
     out = left
     ret = Z_OK
     while True:
@@ -500,7 +501,7 @@ def inflate64(strm, flush):
                     if (updatewindow(strm, out)):
                         state.mode = INFLATE_MODE.MEM
                         return Z_MEM_ERROR
-                in -= strm.avail_in
+                in_ -= strm.avail_in
                 out -= strm.avail_out
                 strm.total_in += in
                 strm.total_out += out
@@ -571,7 +572,7 @@ def inflate64(strm, flush):
                             state.mode = INFLATE_MODE.MEM
                             return Z_MEM_ERROR
                         }
-                    in -= strm.avail_in
+                    in_ -= strm.avail_in
                     out -= strm.avail_out
                     strm.total_in += in
                     strm.total_out += out
@@ -585,7 +586,7 @@ def inflate64(strm, flush):
                     return ret
                 memcpy(put, next, copy)
                 have -= copy
-                next += copy
+                next_ += copy
                 left -= copy
                 put += copy
                 state.length -= copy
@@ -783,7 +784,7 @@ def inflate64(strm, flush):
                         state.mode = INFLATE_MODE.MEM
                         return Z_MEM_ERROR
                     }
-                in -= strm.avail_in
+                in_ -= strm.avail_in
                 out -= strm.avail_out
                 strm.total_in += in
                 strm.total_out += out
@@ -829,7 +830,7 @@ def inflate64(strm, flush):
                         state.mode = INFLATE_MODE.MEM
                         return Z_MEM_ERROR
                     }
-                in -= strm.avail_in
+                in_ -= strm.avail_in
                 out -= strm.avail_out
                 strm.total_in += in
                 strm.total_out += out
@@ -876,7 +877,7 @@ def inflate64(strm, flush):
                     state.mode = INFLATE_MODE.MEM
                     return Z_MEM_ERROR
                 }
-            in -= strm.avail_in
+            in_ -= strm.avail_in
             out -= strm.avail_out
             strm.total_in += in
             strm.total_out += out
@@ -896,7 +897,7 @@ def inflate64(strm, flush):
                     state.mode = INFLATE_MODE.MEM
                     return Z_MEM_ERROR
                 }
-            in -= strm.avail_in
+            in_ -= strm.avail_in
             out -= strm.avail_out
             strm.total_in += in
             strm.total_out += out
@@ -954,7 +955,7 @@ def inflate_table(type, lens, codes, table, bits, work):
     #  unsigned low               """ low bits for current root entry """
     #  unsigned mask              """ mask for low root bits """
     #  code this                  """ table entry for duplication """
-    #  code FAR *next             """ next available space in table """
+    #  code FAR *next_             """ next available space in table """
     #  const unsigned short FAR *base     """ base value table to use """
     #  const unsigned short FAR *extra    """ extra bits table to use """
     #  int end                    """ use base and extra for symbol > end """
@@ -1111,7 +1112,7 @@ def inflate_table(type, lens, codes, table, bits, work):
     huff = 0                   """ starting code """
     sym = 0                    """ starting code symbol """
     len = min                  """ starting code length """
-    next = *table              """ current table to fill in """
+    next_ = *table              """ current table to fill in_ """
     curr = root                """ current table index bits """
     drop = 0                   """ current bits to drop from code for index """
     low = (unsigned)(-1)       """ trigger new sub-table when len > root """
@@ -1169,7 +1170,7 @@ def inflate_table(type, lens, codes, table, bits, work):
                 drop = root
 
             """ increment past last table """
-            next += min            """ here min is 1 << curr """
+            next_ += min            """ here min is 1 << curr """
 
             """ determine length of next table """
             curr = len - drop
@@ -1190,7 +1191,7 @@ def inflate_table(type, lens, codes, table, bits, work):
             low = huff & mask
             (*table)[low].op = (unsigned char)curr
             (*table)[low].bits = (unsigned char)root
-            (*table)[low].val = (unsigned short)(next - *table)
+            (*table)[low].val = (unsigned short)(next_ - *table)
         }
     }
 
@@ -1209,7 +1210,7 @@ def inflate_table(type, lens, codes, table, bits, work):
         if (drop != 0 && (huff & mask) != low):
             drop = 0
             len = root
-            next = *table
+            next_ = *table
             this.bits = (unsigned char)len
 
         """ put invalid code marker in table """
