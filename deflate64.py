@@ -35,6 +35,19 @@ INFLATE_MODE = enum(
     "SYNC"        # looking for synchronization bytes to restart inflate() */
 )
 
+# TODO define these properly (probably integer codes)
+Z_NULL = object()
+Z_STREAM_ERROR = object()
+Z_MEM_ERROR = object()
+Z_OK = object()
+Z_BLOCK = object()
+Z_FINISH = object()
+Z_DEFLATED = object()
+Z_NEED_DICT = object()
+Z_BUF_ERROR = object()
+Z_SYNC_FLUSH = object()
+Z_DATA_ERROR = object()
+
 @dataclass
 class code:
     op: str           # operation, extra bits, table bits
