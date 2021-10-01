@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 import enum
 from collections import namedtuple
+
 
 INFLATE_MODE = enum(
     "HEAD",       # i: waiting for magic header */
@@ -34,74 +36,67 @@ INFLATE_MODE = enum(
     "SYNC"        # looking for synchronization bytes to restart inflate() */
 )
 
-inflate_state = namedtuple(
-    'inflate_state',
-    [
-        'mode',          # current inflate mode
-        'last',                  # true if processing last block
-        'wrap',                  # bit 0 true for zlib, bit 1 true for gzip
-        'havedict',               # true if dictionary provided
-        'flags',                  # gzip header method and flags (0 if zlib)
-        'dmax',              # zlib header max distance (INFLATE_STRICT)
-        'check',        # protected copy of check value
-        'total',        # protected copy of output count
-            # sliding window
-        'wbits',             # log base 2 of requested window size
-        'wsize',             # window size or zero if not using window
-        'whave',             # valid bytes in the window
-        'write',             # window write index
-        'window',  # allocated sliding window, if needed
-            # bit accumulator
-        'hold',         # input bit accumulator
-        'bits',              # number of bits in "in"
-            # for string and stored block copying
-        'length',            #literal or length of data to copy
-        'offset',            # distance back to copy string from
-            # for table and code decoding
-        'extra',             # extra bits needed
-            # fixed and dynamic code tables
-        'lencode',    #starting table for length/literal codes
-        'distcode',   # starting table for distance codes
-        'lenbits',           # index bits for lencode
-        'distbits',          # index bits for distcode
-            # dynamic table building
-        'ncode',             # number of code length code lengths
-        'nlen',              # number of length code lengths
-        'ndist',             # number of distance code lengths
-        'have',              # number of code lengths in lens[]
-        'next',             # next available space in codes[]
-        'lens';   # temporary storage for code lengths
-        'work',   # work area for code table building
-        'codes',         # space for code tables
-    ]
-)
+@dataclass
+class code:
+    op: str           # operation, extra bits, table bits
+    bits: bytes # TODO this may need to be bytearray, or just plain str         # bits in this part of the code
+    val: int         # offset in table or code value
 
-code = namedtuple(
-    'code',
-    [
-        'op',           # operation, extra bits, table bits
-        'bits',         # bits in this part of the code
-        'val'         # offset in table or code value
-    ]
-)
 
-z_stream64 = namedtuple(
-    'z_stream64',
-    [
-        'next_in',  # next input byte pointer
-        'total_in',  # total nb of input bytes read so far
-        'avail_in',  # number of bytes available at next_in
+@dataclass
+class inflate_state:
+    mode: INFLATE_MODE          # current inflate mode
+    last: int                 # true if processing last block
+    wrap: int                  # bit 0 true for zlib, bit 1 true for gzip
+    havedict: int               # true if dictionary provided
+    flags: int                  # gzip header method and flags (0 if zlib)
+    dmax: int              # zlib header max distance (INFLATE_STRICT)
+    check: int        # protected copy of check value
+    total: int        # protected copy of output count
+        # sliding window
+    wbits: int             # log base 2 of requested window size
+    wsize: int            # window size or zero if not using window
+    whave: int             # valid bytes in the window
+    write: int             # window write index
+    window: str  # allocated sliding window, if needed
+        # bit accumulator
+    hold: int         # input bit accumulator
+    bits: int              # number of bits in "in"
+        # for string and stored block copying
+    length: int            #literal or length of data to copy
+    offset: int            # distance back to copy string from
+        # for table and code decoding
+    extra: int             # extra bits needed
+        # fixed and dynamic code tables
+    lencode: code    #starting table for length/literal codes
+    distcode: code   # starting table for distance codes
+    lenbits: int           # index bits for lencode
+    distbits: int           # index bits for distcode
+        # dynamic table building
+    ncode: int             # number of code length code lengths
+    nlen: int              # number of length code lengths
+    ndist: int             # number of distance code lengths
+    have: int              # number of code lengths in lens[]
+    next: code             # next available space in codes[]
+    lens: list   # temporary storage for code lengths
+    work: list   # work area for code table building
+    codes: list         # space for code tables
 
-        'avail_out', # remaining free space at next_out
-        'next_out', # pointer to next output byte should be put there
-        'total_out', # total nb of bytes output so far
 
-        'state', # Pointer to internal state not visible by applications, typeof state namedtuple
+@dataclass
+class z_stream64:
+    next_in: int  # next input byte pointer
+    total_in: int  # total nb of input bytes read so far
+    avail_in: int   # number of bytes available at next_in
 
-        'adler',      # adler32 value of the uncompressed data
-        'data_type',  # best guess about the data type: binary or text
-    ]
-)
+    avail_out: int # remaining free space at next_out
+    next_out: int # pointer to next output byte should be put there
+    total_out: int # total nb of bytes output so far
+
+    state: inflate_state  # Pointer to internal state not visible by applications, typeof state namedtuple
+
+    adler: int # adler32 value of the uncompressed data
+    data_type: int  # best guess about the data type: binary or text
 
     """ function prototypes """
 #  local void fixedtables OF((struct inflate_state FAR *state))
