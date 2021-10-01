@@ -264,7 +264,7 @@ def updatewindow(strm, out):
    returns:
 
     case STATEw:
-        while (want < need) {
+        while (want < need):
             NEEDBITS(n)
             keep[want++] = BITS(n)
             DROPBITS(n)
@@ -659,7 +659,7 @@ def inflate64(strm, flush):
   inf_leave:
     RESTORE()
     if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
-        if (updatewindow(strm, out)) {
+        if (updatewindow(strm, out)):
             state.mode = MEM
             return Z_MEM_ERROR
         }
@@ -676,7 +676,6 @@ def inflate64(strm, flush):
     if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
         ret = Z_BUF_ERROR
     return ret
-}
 
 def inflate64End(strm):
     struct inflate_state FAR *state
@@ -686,7 +685,7 @@ def inflate64End(strm):
     if (state.window != Z_NULL) free(state.window)
     free(strm.state)
     strm.state = Z_NULL
-    Tracev((stderr, "inflate: end\n"))
+    print("inflate: end\n")
     return Z_OK
 
 
@@ -782,7 +781,7 @@ def inflate_table(type, lens, codes, table, bits, work):
     for (max = MAXBITS max >= 1 max--)
         if (count[max] != 0) break
     if (root > max) root = max
-    if (max == 0) {                     """ no symbols to code at all """
+    if (max == 0):                     """ no symbols to code at all """
         this.op = (unsigned char)64    """ invalid code marker """
         this.bits = (unsigned char)1
         this.val = (unsigned short)0
@@ -797,7 +796,7 @@ def inflate_table(type, lens, codes, table, bits, work):
 
     """ check for an over-subscribed or incomplete set of lengths """
     left = 1
-    for (len = 1 len <= MAXBITS len++) {
+    for (len = 1 len <= MAXBITS len++):
         left <<= 1
         left -= count[len]
         if (left < 0) return -1        """ over-subscribed """
@@ -881,27 +880,24 @@ def inflate_table(type, lens, codes, table, bits, work):
         return 1
 
     """ process all codes and make table entries """
-    for () {
+    while True:
         """ create table entry """
         this.bits = (unsigned char)(len - drop)
-        if ((int)(work[sym]) < end) {
+        if ((int)(work[sym]) < end):
             this.op = (unsigned char)0
             this.val = work[sym]
-        }
-        else if ((int)(work[sym]) > end) {
+        elif ((int)(work[sym]) > end):
             this.op = (unsigned char)(extra[work[sym]])
             this.val = base[work[sym]]
-        }
-        else {
+        else:
             this.op = (unsigned char)(32 + 64)         """ end of block """
             this.val = 0
-        }
 
         """ replicate for those indices with low len bits equal to huff """
         incr = 1U << (len - drop)
         fill = 1U << curr
         min = fill                 """ save offset to next table """
-        do {
+        do:
             fill -= incr
             next[(huff >> drop) + fill] = this
         } while (fill != 0)
@@ -910,22 +906,21 @@ def inflate_table(type, lens, codes, table, bits, work):
         incr = 1U << (len - 1)
         while (huff & incr)
             incr >>= 1
-        if (incr != 0) {
+        if (incr != 0):
             huff &= incr - 1
             huff += incr
-        }
         else
             huff = 0
 
         """ go to next symbol, update count, len """
         sym++
-        if (--(count[len]) == 0) {
+        if (--(count[len]) == 0):
             if (len == max) break
             len = lens[work[sym]]
         }
 
         """ create new sub-table if needed """
-        if (len > root && (huff & mask) != low) {
+        if (len > root && (huff & mask) != low):
             """ if first time, transition to sub-tables """
             if (drop == 0)
                 drop = root
@@ -936,7 +931,7 @@ def inflate_table(type, lens, codes, table, bits, work):
             """ determine length of next table """
             curr = len - drop
             left = (int)(1 << curr)
-            while (curr + drop < max) {
+            while (curr + drop < max):
                 left -= count[curr + drop]
                 if (left <= 0) break
                 curr++
@@ -966,14 +961,13 @@ def inflate_table(type, lens, codes, table, bits, work):
     this.op = (unsigned char)64                """ invalid code marker """
     this.bits = (unsigned char)(len - drop)
     this.val = (unsigned short)0
-    while (huff != 0) {
+    while (huff != 0):
         """ when done with sub-table, drop back to root table """
-        if (drop != 0 && (huff & mask) != low) {
+        if (drop != 0 && (huff & mask) != low):
             drop = 0
             len = root
             next = *table
             this.bits = (unsigned char)len
-        }
 
         """ put invalid code marker in table """
         next[huff >> drop] = this
@@ -982,15 +976,14 @@ def inflate_table(type, lens, codes, table, bits, work):
         incr = 1U << (len - 1)
         while (huff & incr)
             incr >>= 1
-        if (incr != 0) {
+        if (incr != 0):
             huff &= incr - 1
             huff += incr
-        }
-        else
+        else:
             huff = 0
-    }
 
     """ set return parameters """
     *table += used
     *bits = root
     return 0
+
