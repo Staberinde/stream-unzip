@@ -218,7 +218,7 @@ def updatewindow(strm, out):
 
     """ if it hasn't been done already, allocate space for the window """
     if (state.window == Z_NULL):
-        state.window = (unsigned char FAR *)cli_calloc(1U << state.wbits, sizeof(unsigned char))
+        state.window = 1 << state.wbits
         if (state.window == Z_NULL) return 1
 
     """ if window not in use yet, initialize """
