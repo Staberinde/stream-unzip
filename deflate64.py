@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import enum
-from collections import namedtuple
 
 
 INFLATE_MODE = enum(
@@ -243,7 +242,8 @@ def updatewindow(strm, out):
 """ Macros for inflate(): """
 
 """ check function to use adler32() for zlib or crc32() for gzip """
-#  define UPDATE(check, buf, len) adler32(check, buf, len)
+def UPDATE(check, buf, len):
+    return adler32(check, buf, len)
 
 # TODO is this a global or do we want to refactor this to be passsed?
 #  state = None
@@ -282,7 +282,7 @@ def INITBITS():
 """ Get a byte of input into the bit accumulator, or return from inflate()
    if there is no input available. """
 def PULLBYTE():
-    global have, hold, bits, out, in
+    global have, hold, bits, out, in_
     if (have == 0):
         """
            Return from inflate(), updating the total counts and the check value.
@@ -450,6 +450,7 @@ def inflate64(strm, flush):
     in_ = have
     out = left
     ret = Z_OK
+    # TODO: I *think* these `break` statements should actually be `continue`s?
     while True:
         if state.mode == INFLATE_MODE.HEAD:
             if (state.wrap == 0):
@@ -498,7 +499,7 @@ def inflate64(strm, flush):
                         return Z_MEM_ERROR
                 in_ -= strm.avail_in
                 out -= strm.avail_out
-                strm.total_in += in
+                strm.total_in += in_
                 strm.total_out += out
                 state.total += out
                 if (state.wrap && out)
@@ -569,7 +570,7 @@ def inflate64(strm, flush):
                         }
                     in_ -= strm.avail_in
                     out -= strm.avail_out
-                    strm.total_in += in
+                    strm.total_in += in_
                     strm.total_out += out
                     state.total += out
                     if (state.wrap && out)
@@ -597,11 +598,9 @@ def inflate64(strm, flush):
             DROPBITS(5)
             state.ncode = BITS(4) + 4
             DROPBITS(4)
-#ifndef PKZIP_BUG_WORKAROUND
             if (state.nlen > 286 || state.ndist > 30):
                 state.mode = INFLATE_MODE.ACAB_BAD
                 break
-#endif
             print("inflate:       table sizes ok\n")
             state.have = 0
             state.mode = INFLATE_MODE.LENLENS
@@ -781,7 +780,7 @@ def inflate64(strm, flush):
                     }
                 in_ -= strm.avail_in
                 out -= strm.avail_out
-                strm.total_in += in
+                strm.total_in += in_
                 strm.total_out += out
                 state.total += out
                 if (state.wrap && out)
@@ -827,7 +826,7 @@ def inflate64(strm, flush):
                     }
                 in_ -= strm.avail_in
                 out -= strm.avail_out
-                strm.total_in += in
+                strm.total_in += in_
                 strm.total_out += out
                 state.total += out
                 if (state.wrap && out)
@@ -874,7 +873,7 @@ def inflate64(strm, flush):
                 }
             in_ -= strm.avail_in
             out -= strm.avail_out
-            strm.total_in += in
+            strm.total_in += in_
             strm.total_out += out
             state.total += out
             if (state.wrap && out)
@@ -894,7 +893,7 @@ def inflate64(strm, flush):
                 }
             in_ -= strm.avail_in
             out -= strm.avail_out
-            strm.total_in += in
+            strm.total_in += in_
             strm.total_out += out
             state.total += out
             if (state.wrap && out)
