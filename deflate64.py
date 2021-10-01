@@ -121,7 +121,7 @@ def inflate64Init2(strm, windowBits):
         free(state)
         strm.state = Z_NULL
         return Z_STREAM_ERROR
-    state.wbits = (unsigned)windowBits
+    state.wbits = windowBits
     state.window = Z_NULL
     strm.total_in = strm.total_out = state.total = 0
     strm.adler = 1        """ to support ill-conceived Java test suite """
@@ -201,11 +201,7 @@ def fixedtables(state):
    The advantage may be dependent on the size of the processor's data caches.
  """
 def updatewindow(strm, out):
-
-    struct inflate_state FAR *state
-    unsigned copy, dist
-
-    state = (struct inflate_state FAR *)strm.state
+    state = inflate_state()
 
     """ if it hasn't been done already, allocate space for the window """
     if (state.window == Z_NULL):
@@ -471,7 +467,7 @@ def inflate64(strm, flush):
             if (len > state.wbits):
                 state.mode = INFLATE_MODE.ACAB_BAD
                 break
-            state.dmax = 1U << len
+            state.dmax = 1 << len
             print("inflate:   zlib header ok\n")
             #TODO find python implementation of adler32
             strm.adler = state.check = adler32(0L, Z_NULL, 0)
@@ -667,17 +663,17 @@ def inflate64(strm, flush):
 
             """ build code tables """
             state.next = state.codes
-            state.lencode = (code const FAR *)(state.next)
+            state.lencode = code(state.next)
             state.lenbits = 9
-            ret = inflate_table(LENS, state.lens, state.nlen, &(state.next),
-                                &(state.lenbits), state.work)
+            ret = inflate_table(LENS, state.lens, state.nlen, state.next,
+                                state.lenbits, state.work)
             if (ret):
                 state.mode = INFLATE_MODE.ACAB_BAD
                 break
-            state.distcode = (code const FAR *)(state.next)
+            state.distcode = code(state.next)
             state.distbits = 6
             ret = inflate_table(DISTS, state.lens + state.nlen, state.ndist,
-                            &(state.next), &(state.distbits), state.work)
+                            state.next, state.distbits, state.work)
             if (ret):
                 state.mode = INFLATE_MODE.ACAB_BAD
                 break
@@ -692,7 +688,7 @@ def inflate64(strm, flush):
 		}"""
             for () {
                 this = state.lencode[BITS(state.lenbits)]
-                if ((unsigned)(this.bits) <= bits) break
+                if ((this.bits) <= bits) break
                 PULLBYTE()
             }
             if (this.op && (this.op & 0xf0) == 0):
@@ -700,12 +696,12 @@ def inflate64(strm, flush):
                 for () {
                     this = state.lencode[last.val +
                             (BITS(last.bits + last.op) >> last.bits)]
-                    if ((unsigned)(last.bits + this.bits) <= bits) break
+                    if ((last.bits + this.bits) <= bits) break
                     PULLBYTE()
                 }
                 DROPBITS(last.bits)
             DROPBITS(this.bits)
-            state.length = (unsigned)this.val
+            state.length = this.val
             if ((int)(this.op) == 0):
                 Tracevv((stderr, this.val >= 0x20 && this.val < 0x7f ?
                         "inflate:         literal '%c'\n" :
@@ -732,14 +728,14 @@ def inflate64(strm, flush):
             state.mode = INFLATE_MODE.DIST
         elif state.mode == INFLATE_MODE.DIST:
                 this = state.distcode[BITS(state.distbits)]
-                if ((unsigned)(this.bits) <= bits) break
+                if ((this.bits) <= bits) break
                 PULLBYTE()
             if ((this.op & 0xf0) == 0):
                 last = this
                 for () {
                     this = state.distcode[last.val +
                             (BITS(last.bits + last.op) >> last.bits)]
-                    if ((unsigned)(last.bits + this.bits) <= bits) break
+                    if ((last.bits + this.bits) <= bits) break
                     PULLBYTE()
                 }
                 DROPBITS(last.bits)
@@ -1111,7 +1107,7 @@ def inflate_table(type, lens, codes, table, bits, work):
     next_ = *table              """ current table to fill in_ """
     curr = root                """ current table index bits """
     drop = 0                   """ current bits to drop from code for index """
-    low = (unsigned)(-1)       """ trigger new sub-table when len > root """
+    low = (-1)       """ trigger new sub-table when len > root """
     used = 1U << root          """ use root table entries """
     mask = used - 1            """ mask for comparing low """
 
