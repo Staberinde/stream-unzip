@@ -112,13 +112,12 @@ z_stream64 = namedtuple(
 
 
 def inflate64Init2(strm, windowBits):
-    state = inflate_state()
 
     if (strm == Z_NULL) return Z_STREAM_ERROR
-    state = (struct inflate_state FAR *)cli_calloc(1, sizeof(struct inflate_state))
+    state = inflate_state()
     if (state == Z_NULL) return Z_MEM_ERROR
     print("inflate: allocated\n")
-    strm.state = (struct internal_state FAR *)state
+    strm.state = inflate_state()
     if (windowBits < 0):
         state.wrap = 0
         windowBits = -windowBits
@@ -403,27 +402,29 @@ def REVERSE(q):
  """
 
 def inflate64(strm, flush):
-    struct inflate_state FAR *state
-    unsigned char FAR *next    """ next input """
-    unsigned char FAR *put     """ next output """
-    unsigned have, left        """ available input and output """
-    unsigned long hold         """ bit buffer """
-    unsigned bits              """ bits in bit buffer """
-    unsigned in, out           """ save starting available input and output """
-    unsigned copy              """ number of stored or match bytes to copy """
-    unsigned char FAR *from    """ where to copy match bytes from """
-    code this                  """ current decoding table entry """
-    code last                  """ parent table entry """
-    unsigned len               """ length to copy for repeats, bits to drop """
-    int ret                    """ return code """
-    static const unsigned short order[19] = """ permutation of code lengths """
-    {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15}
+    #  unsigned char FAR *next    """ next input """
+    #  unsigned char FAR *put     """ next output """
+    #  unsigned have, left        """ available input and output """
+    #  unsigned long hold         """ bit buffer """
+    #  unsigned bits              """ bits in bit buffer """
+    #  unsigned in, out           """ save starting available input and output """
+    #  unsigned copy              """ number of stored or match bytes to copy """
+    #  unsigned char FAR *from    """ where to copy match bytes from """
+    #  code this                  """ current decoding table entry """
+    #  code last                  """ parent table entry """
+    #  unsigned len               """ length to copy for repeats, bits to drop """
+    #  int ret                    """ return code """
+    #  static const unsigned short order[19] = """ permutation of code lengths """
+    """ permutation of code lengths """
+    order = {
+        16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+    }
 
     if (strm == Z_NULL || strm.state == Z_NULL || strm.next_out == Z_NULL ||
         (strm.next_in == Z_NULL && strm.avail_in != 0))
         return Z_STREAM_ERROR
 
-    state = (struct inflate_state FAR *)strm.state
+    state = inflate_state()
     if (state.mode == INFLATE_MODE.TYPE) state.mode = INFLATE_MODE.TYPEDO      """ skip check """
     LOAD()
     in = have
@@ -449,6 +450,7 @@ def inflate64(strm, flush):
                 break
             state.dmax = 1U << len
             print("inflate:   zlib header ok\n")
+            #TODO find python implementation of adler32
             strm.adler = state.check = adler32(0L, Z_NULL, 0)
             state.mode = INFLATE_MODE.hold & 0x200 ? DICTID : TYPE
             INITBITS()
@@ -781,10 +783,10 @@ def inflate64(strm, flush):
     return ret
 
 def inflate64End(strm):
-    struct inflate_state FAR *state
     if (strm == Z_NULL || strm.state == Z_NULL)
         return Z_STREAM_ERROR
-    state = (struct inflate_state FAR *)strm.state
+
+    state = inflate_state()
     if (state.window != Z_NULL) free(state.window)
     free(strm.state)
     strm.state = Z_NULL
@@ -805,29 +807,34 @@ def inflate64End(strm):
    longest code or if it is less than the shortest code.
  """
 def inflate_table(type, lens, codes, table, bits, work):
-    unsigned len               """ a code's length in bits """
-    unsigned sym               """ index of code symbols """
-    unsigned min, max          """ minimum and maximum code lengths """
-    unsigned root              """ number of index bits for root table """
-    unsigned curr              """ number of index bits for current table """
-    unsigned drop              """ code bits to drop for sub-table """
-    int left                   """ number of prefix codes available """
-    unsigned used              """ code entries in table used """
-    unsigned huff              """ Huffman code """
-    unsigned incr              """ for incrementing code, index """
-    unsigned fill              """ index for replicating entries """
-    unsigned low               """ low bits for current root entry """
-    unsigned mask              """ mask for low root bits """
-    code this                  """ table entry for duplication """
-    code FAR *next             """ next available space in table """
-    const unsigned short FAR *base     """ base value table to use """
-    const unsigned short FAR *extra    """ extra bits table to use """
-    int end                    """ use base and extra for symbol > end """
-    unsigned short count[MAXBITS+1]    """ number of codes of each length """
-    unsigned short offs[MAXBITS+1]     """ offsets in table for each length """
-    static const unsigned short lbase[31] = { """ Length codes 257..285 base """
+    #  unsigned len               """ a code's length in bits """
+    #  unsigned sym               """ index of code symbols """
+    #  unsigned min, max          """ minimum and maximum code lengths """
+    #  unsigned root              """ number of index bits for root table """
+    #  unsigned curr              """ number of index bits for current table """
+    #  unsigned drop              """ code bits to drop for sub-table """
+    #  int left                   """ number of prefix codes available """
+    #  unsigned used              """ code entries in table used """
+    #  unsigned huff              """ Huffman code """
+    #  unsigned incr              """ for incrementing code, index """
+    #  unsigned fill              """ index for replicating entries """
+    #  unsigned low               """ low bits for current root entry """
+    #  unsigned mask              """ mask for low root bits """
+    #  code this                  """ table entry for duplication """
+    #  code FAR *next             """ next available space in table """
+    #  const unsigned short FAR *base     """ base value table to use """
+    #  const unsigned short FAR *extra    """ extra bits table to use """
+    #  int end                    """ use base and extra for symbol > end """
+    #  unsigned short count[MAXBITS+1]    """ number of codes of each length """
+    #  unsigned short offs[MAXBITS+1]     """ offsets in table for each length """
+    #  static const unsigned short lbase[31] = { """ Length codes 257..285 base """
+    """ Length codes 257..285 base """
+    lbase = {
         3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
-	35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, """ 258 """ 3, 0, 0}
+        35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227,
+        """ 258 """
+        3, 0, 0
+    }
     static const unsigned short lext[31] = { """ Length codes 257..285 extra """
 """         16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, """
 """         19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 31, 201, 196} """
