@@ -117,7 +117,7 @@ def inflate64Init2(strm, windowBits):
         windowBits = -windowBits
     else:
         state.wrap = (windowBits >> 4) + 1
-    if (windowBits < 8 || windowBits > MAX_WBITS64):
+    if (windowBits < 8 or windowBits > MAX_WBITS64):
         free(state)
         strm.state = Z_NULL
         return Z_STREAM_ERROR
@@ -288,7 +288,7 @@ def PULLBYTE():
            Note: a memory error from inflate() is non-recoverable.
         """
         RESTORE()
-        if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+        if (state.wsize or (state.mode < CHECK and out != strm.avail_out))
             if (updatewindow(strm, out)):
                 state.mode = INFLATE_MODE.MEM
                 return Z_MEM_ERROR
@@ -298,11 +298,11 @@ def PULLBYTE():
         strm.total_in += in
         strm.total_out += out
         state.total += out
-        if (state.wrap && out)
+        if (state.wrap and out)
             strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
         strm.data_type = state.bits + (64 if state.last else 0) +
                           (128 if state.mode == INFLATE_MODE.TYPE else 0)
-        if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+        if (((in == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
             ret = Z_BUF_ERROR
         return ret
     have -= 1
@@ -437,8 +437,11 @@ def inflate64(strm, flush):
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
     }
 
-    if (strm == Z_NULL || strm.state == Z_NULL || strm.next_out == Z_NULL ||
-        (strm.next_in == Z_NULL && strm.avail_in != 0))
+    if (
+        strm == Z_NULL or strm.state == Z_NULL or strm.next_out == Z_NULL or (
+            strm.next_in == Z_NULL and strm.avail_in != 0
+        )
+    ):
         return Z_STREAM_ERROR
 
     state = inflate_state()
@@ -470,7 +473,7 @@ def inflate64(strm, flush):
             state.dmax = 1 << len
             print("inflate:   zlib header ok\n")
             #TODO find python implementation of adler32
-            strm.adler = state.check = adler32(0L, Z_NULL, 0)
+            strm.adler = state.check = adler32(0, Z_NULL, 0)
             state.mode = DICTID if INFLATE_MODE.hold & 0x200 else TYPE
             INITBITS()
             break
@@ -491,7 +494,7 @@ def inflate64(strm, flush):
                    Note: a memory error from inflate() is non-recoverable.
                 """
                 RESTORE()
-                if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                if (state.wsize or (state.mode < CHECK and out != strm.avail_out))
                     if (updatewindow(strm, out)):
                         state.mode = INFLATE_MODE.MEM
                         return Z_MEM_ERROR
@@ -500,11 +503,11 @@ def inflate64(strm, flush):
                 strm.total_in += in_
                 strm.total_out += out
                 state.total += out
-                if (state.wrap && out)
+                if (state.wrap and out)
                     strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
                 strm.data_type = state.bits + (64 if state.last else 0) +
                                   (128 if state.mode == INFLATE_MODE.TYPE else 0)
-                if (((in_ == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                if (((in_ == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
                     ret = Z_BUF_ERROR
                 return ret
         elif state.mode == INFLATE_MODE.TYPEDO:
@@ -561,7 +564,7 @@ def inflate64(strm, flush):
                        Note: a memory error from inflate() is non-recoverable.
                     """
                     RESTORE()
-                    if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                    if (state.wsize or (state.mode < CHECK and out != strm.avail_out))
                         if (updatewindow(strm, out)):
                             state.mode = INFLATE_MODE.MEM
                             return Z_MEM_ERROR
@@ -571,11 +574,11 @@ def inflate64(strm, flush):
                     strm.total_in += in_
                     strm.total_out += out
                     state.total += out
-                    if (state.wrap && out)
+                    if (state.wrap and out)
                         strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
                     strm.data_type = state.bits + (64 if state.last else 0) +
                                       (128 if state.mode == INFLATE_MODE.TYPE else 0)
-                    if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                    if (((in == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
                         ret = Z_BUF_ERROR
                     return ret
                 memcpy(put, next, copy)
@@ -596,7 +599,7 @@ def inflate64(strm, flush):
             DROPBITS(5)
             state.ncode = BITS(4) + 4
             DROPBITS(4)
-            if (state.nlen > 286 || state.ndist > 30):
+            if (state.nlen > 286 or state.ndist > 30):
                 state.mode = INFLATE_MODE.ACAB_BAD
                 break
             print("inflate:       table sizes ok\n")
@@ -680,30 +683,22 @@ def inflate64(strm, flush):
             print("inflate:       codes ok\n")
             state.mode = INFLATE_MODE.LEN
         elif state.mode == INFLATE_MODE.LEN:
-		"""            if (have >= 6 && left >= 258):
-                RESTORE()
-                inflate_fast(strm, out)
-                LOAD()
-                break
-		}"""
-            for () {
+            while True:
                 this = state.lencode[BITS(state.lenbits)]
                 if ((this.bits) <= bits) break
                 PULLBYTE()
-            }
-            if (this.op && (this.op & 0xf0) == 0):
+            if (this.op and (this.op & 0xf0) == 0):
                 last = this
-                for () {
+                for ():
                     this = state.lencode[last.val +
                             (BITS(last.bits + last.op) >> last.bits)]
                     if ((last.bits + this.bits) <= bits) break
                     PULLBYTE()
-                }
                 DROPBITS(last.bits)
             DROPBITS(this.bits)
             state.length = this.val
             if ((int)(this.op) == 0):
-                Tracevv((stderr, this.val >= 0x20 && this.val < 0x7f ?
+                Tracevv((stderr, this.val >= 0x20 and this.val < 0x7f ?
                         "inflate:         literal '%c'\n" :
                         "inflate:         literal 0x%02x\n", this.val))
                 state.mode = INFLATE_MODE.LIT
@@ -771,7 +766,7 @@ def inflate64(strm, flush):
                    Note: a memory error from inflate() is non-recoverable.
                 """
                 RESTORE()
-                if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                if (state.wsize or (state.mode < CHECK and out != strm.avail_out))
                     if (updatewindow(strm, out)):
                         state.mode = INFLATE_MODE.MEM
                         return Z_MEM_ERROR
@@ -781,11 +776,11 @@ def inflate64(strm, flush):
                 strm.total_in += in_
                 strm.total_out += out
                 state.total += out
-                if (state.wrap && out)
+                if (state.wrap and out)
                     strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
                 strm.data_type = state.bits + (64 if state.last else 0) +
                                   (128 if state.mode == INFLATE_MODE.TYPE else 0)
-                if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                if (((in == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
                     ret = Z_BUF_ERROR
                 return ret
             copy = out - left
@@ -817,7 +812,7 @@ def inflate64(strm, flush):
                    Note: a memory error from inflate() is non-recoverable.
                 """
                 RESTORE()
-                if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+                if (state.wsize or (state.mode < CHECK and out != strm.avail_out))
                     if (updatewindow(strm, out)):
                         state.mode = INFLATE_MODE.MEM
                         return Z_MEM_ERROR
@@ -827,11 +822,11 @@ def inflate64(strm, flush):
                 strm.total_in += in_
                 strm.total_out += out
                 state.total += out
-                if (state.wrap && out)
+                if (state.wrap and out)
                     strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
                 strm.data_type = state.bits + (64 if state.last else 0) +
                                   (128 if state.mode == INFLATE_MODE.TYPE else 0)
-                if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+                if (((in == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
                     ret = Z_BUF_ERROR
                 return ret
             *put++ = (unsigned char)(state.length)
@@ -864,7 +859,7 @@ def inflate64(strm, flush):
                Note: a memory error from inflate() is non-recoverable.
             """
             RESTORE()
-            if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+            if (state.wsize or (state.mode < CHECK and out != strm.avail_out))
                 if (updatewindow(strm, out)):
                     state.mode = INFLATE_MODE.MEM
                     return Z_MEM_ERROR
@@ -874,17 +869,17 @@ def inflate64(strm, flush):
             strm.total_in += in_
             strm.total_out += out
             state.total += out
-            if (state.wrap && out)
+            if (state.wrap and out)
                 strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
             strm.data_type = state.bits + (64 if state.last else 0) +
                               (128 if state.mode == INFLATE_MODE.TYPE else 0)
-            if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+            if (((in == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
                 ret = Z_BUF_ERROR
             return ret
         elif state.mode == INFLATE_MODE.ACAB_BAD:
             ret = Z_DATA_ERROR
             RESTORE()
-            if (state.wsize || (state.mode < CHECK && out != strm.avail_out))
+            if (state.wsize or (state.mode < CHECK and out != strm.avail_out))
                 if (updatewindow(strm, out)):
                     state.mode = INFLATE_MODE.MEM
                     return Z_MEM_ERROR
@@ -894,11 +889,11 @@ def inflate64(strm, flush):
             strm.total_in += in_
             strm.total_out += out
             state.total += out
-            if (state.wrap && out)
+            if (state.wrap and out)
                 strm.adler = state.check = UPDATE(state.check, strm.next_out - out, out)
             strm.data_type = state.bits + (64 if state.last else 0) +
                               (128 if state.mode == INFLATE_MODE.TYPE else 0)
-            if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
+            if (((in == 0 and out == 0) or flush == Z_FINISH) and ret == Z_OK)
                 ret = Z_BUF_ERROR
             return ret
         elif state.mode == INFLATE_MODE.MEM:
@@ -909,7 +904,7 @@ def inflate64(strm, flush):
 
 
 def inflate64End(strm):
-    if (strm == Z_NULL || strm.state == Z_NULL)
+    if (strm == Z_NULL or strm.state == Z_NULL)
         return Z_STREAM_ERROR
 
     state = inflate_state()
@@ -1037,7 +1032,7 @@ def inflate_table(type, lens, codes, table, bits, work):
         left -= count[len]
         if (left < 0) return -1        """ over-subscribed """
     }
-    if (left > 0 && (type == CODES || max != 1))
+    if (left > 0 and (type == CODES or max != 1))
         return -1                      """ incomplete set """
 
     """ generate offsets into symbol table for each length for sorting """
@@ -1082,23 +1077,19 @@ def inflate_table(type, lens, codes, table, bits, work):
      """
 
     """ set up for code type """
-    switch (type) {
-    case CODES:
+    if type == INFLATE_MODE.CODES:
         base = extra = work    """ dummy value--not used """
         end = 19
-        break
-    case LENS:
+    elif type == INFLATE_MODE.LENS:
         base = lbase
         base -= 257
         extra = lext
         extra -= 257
         end = 256
-        break
-    default:            """ DISTS """
+    else:            """ DISTS """
         base = dbase
         extra = dext
         end = -1
-    }
 
     """ initialize state for loop """
     huff = 0                   """ starting code """
@@ -1112,7 +1103,7 @@ def inflate_table(type, lens, codes, table, bits, work):
     mask = used - 1            """ mask for comparing low """
 
     """ check available table space """
-    if (type == LENS && used >= ENOUGH - MAXD)
+    if (type == LENS and used >= ENOUGH - MAXD)
         return 1
 
     """ process all codes and make table entries """
@@ -1156,7 +1147,7 @@ def inflate_table(type, lens, codes, table, bits, work):
         }
 
         """ create new sub-table if needed """
-        if (len > root && (huff & mask) != low):
+        if (len > root and (huff & mask) != low):
             """ if first time, transition to sub-tables """
             if (drop == 0)
                 drop = root
@@ -1176,7 +1167,7 @@ def inflate_table(type, lens, codes, table, bits, work):
 
             """ check for enough space """
             used += 1U << curr
-            if (type == LENS && used >= ENOUGH - MAXD)
+            if (type == LENS and used >= ENOUGH - MAXD)
                 return 1
 
             """ point entry in root table to sub-table """
@@ -1199,7 +1190,7 @@ def inflate_table(type, lens, codes, table, bits, work):
     this.val = (unsigned short)0
     while (huff != 0):
         """ when done with sub-table, drop back to root table """
-        if (drop != 0 && (huff & mask) != low):
+        if (drop != 0 and (huff & mask) != low):
             drop = 0
             len = root
             next_ = *table
